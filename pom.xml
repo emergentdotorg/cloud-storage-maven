@@ -9,7 +9,7 @@
   
     <name>Cloud Storage</name>
     <description>The CloudStorage project enables you to use the storage options of cloud provides (Google Cloud) storage as maven repositories.</description>
-    <url>https://github.com/gkatzioura/CloudStorage</url>
+    <url>https://github.com/emergentdotorg/CloudStorage</url>
 
     <licenses>
         <license>
@@ -29,11 +29,11 @@
     </developers>
 
     <scm>
-        <url>https://github.com/gkatzioura/CloudStorage</url>
-        <connection>scm:git:https://github.com/gkatzioura/CloudStorage.git</connection>
-        <developerConnection>scm:git:https://github.com/gkatzioura/CloudStorage.git</developerConnection>
-      <tag>HEAD</tag>
-  </scm>
+        <url>https://github.com/emergentdotorg/CloudStorage</url>
+        <connection>scm:git:https://github.com/emergentdotorg/CloudStorage.git</connection>
+        <developerConnection>scm:git:https://github.com/emergentdotorg/CloudStorage.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <wagon.version>3.0.0</wagon.version>
@@ -45,17 +45,16 @@
     </properties>
 
     <distributionManagement>
-        <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
         <repository>
-            <id>sonatype-nexus-staging</id>
-            <name>Nexus Release Repository</name>
-            <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>github-emergent</id>
+            <name>GitHub emergentdotorg Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/emergentdotorg/pkgrepo</url>
         </repository>
-        <downloadUrl>https://oss.sonatype.org/content/groups/public/org/knowm/xchart</downloadUrl>
+        <snapshotRepository>
+            <id>github-emergent</id>
+            <name>GitHub emergentdotorg Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/emergentdotorg/pkgrepo</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <build>
