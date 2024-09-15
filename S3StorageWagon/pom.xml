@@ -122,7 +122,7 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <!-- Tests that require an S3 setup with creadentials-->
+                            <!-- Tests that require an S3 setup with credentials-->
                             <excludes>
                                 <exclude>**/S3StorageWagonTest.*</exclude>
                             </excludes>
