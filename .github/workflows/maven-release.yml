@@ -1,0 +1,89 @@
+# This workflow will build a Java project with Maven, and cache/restore
+# any dependencies to improve the workflow execution time. For more information see:
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+
+name: Java Maven Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      next-release-version:
+        description: 'Next Release Version'
+      next-snapshot-version:
+        description: 'Next Snapshot Version'
+
+env:
+  DEPLOY_REPO_ID: github-emergentdotorg
+  DEPLOY_USERNAME: ${{ secrets.deploy_username }}
+  DEPLOY_PASSWORD: ${{ secrets.deploy_password }}
+
+jobs:
+
+  release:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDKs
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: |
+            8
+          mvn-toolchain-vendor: Eclipse Temurin
+          cache: maven
+          server-id: ${{ env.DEPLOY_REPO_ID }}
+          server-username: 'DEPLOY_USERNAME'
+          server-password: 'DEPLOY_PASSWORD'
+          settings-path: ${{ github.workspace }} # directory for the settings.xml file
+
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.8.8
+
+      - name: Release with Maven
+        shell: bash
+        env:
+          RELEASE_PLUGIN_COORDS: org.apache.maven.plugins:maven-release-plugin:3.1.1
+        run: |
+          NEXT_REL_VER="${{ github.event.inputs.next-release-version }}"
+          NEXT_DEV_VER="${{ github.event.inputs.next-snapshot-version }}"
+
+          echo NEXT_REL_VER=$NEXT_REL_VER
+          echo NEXT_DEV_VER=$NEXT_DEV_VER
+               
+          function getRelProp {
+            grep "^${1}=" release.properties|cut -d'=' -f2
+          }
+          
+          function execMvn {
+            local argsargs=( )
+            local anteargs=( )
+            local postargs=( )
+
+            argsargs+=( "-Dmaven.javadoc.skip=true" )
+
+            anteargs+=( "-B" )
+            anteargs+=( "-Dresume=false" )
+            anteargs+=( "-DpushChanges=true" )
+            anteargs+=( "-DlocalCheckout=true" )
+            anteargs+=( "-DtagNameFormat=@{project.version}" )
+            anteargs+=( "-DscmCommentPrefix=[GitHub] " )
+            if [ ! -z "$NEXT_REL_VER" ] ; then anteargs+=( "-DreleaseVersion=$NEXT_REL_VER" ) ; fi
+            if [ ! -z "$NEXT_DEV_VER" ] ; then anteargs+=( "-DdevelopmentVersion=$NEXT_DEV_VER" ) ; fi       
+            anteargs+=( "-Darguments=${argsargs[*]}" )
+
+            postargs+=( "-s" "$GITHUB_WORKSPACE/settings.xml" )
+            mvn "${anteargs[@]}" \
+              "$@" \
+              "${postargs[@]}"
+            rc=$? ; if [ ${rc} -ne 0 ] ; then echo "Error in prepare & perform, exit code was $rc" ; return $rc ; fi
+          }
+
+          execMvn $RELEASE_PLUGIN_COORDS:prepare $RELEASE_PLUGIN_COORDS:perform
+          rc=$? ; if [ ${rc} -ne 0 ] ; then echo "Error in prepare, exit code was $rc" ; exit $rc ; fi
+
+#          git push --follow-tags --atomic
+#          rc=$? ; if [ ${rc} -ne 0 ] ; then echo "Error running git push" ; exit $rc ; fi
