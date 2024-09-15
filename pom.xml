@@ -9,7 +9,7 @@
 
     <name>Cloud Storage</name>
     <description>Enables use of cloud storage options as maven repositories.</description>
-    <url>https://github.com/emergentdotorg/CloudStorageMaven</url>
+    <url>https://github.com/emergentdotorg/cloud-storage-maven</url>
 
     <licenses>
         <license>
@@ -31,7 +31,7 @@
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <url>https://github.com/emergentdotorg/CloudStorageMaven</url>
+        <url>https://github.com/emergentdotorg/cloud-storage-maven</url>
         <tag>HEAD</tag>
     </scm>
 

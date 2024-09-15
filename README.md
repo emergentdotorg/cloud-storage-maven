@@ -6,6 +6,6 @@ The CloudStorageMaven projects aims to provide an easy way to host your java art
 
 Cloud storage options supported:
 
-* [AWS S3](https://github.com/emergentdotorg/CloudStorageMaven/tree/master/S3StorageWagon)
-* [Google Cloud Storage](https://github.com/emergentdotorg/CloudStorageMaven/tree/master/GoogleStorageWagon)
-* [Azure Blob storage](https://github.com/emergentdotorg/CloudStorageMaven/tree/master/AzureStorageWagon)
+* [AWS S3](https://github.com/emergentdotorg/cloud-storage-maven/tree/master/S3StorageWagon)
+* [Google Cloud Storage](https://github.com/emergentdotorg/cloud-storage-maven/tree/master/GoogleStorageWagon)
+* [Azure Blob storage](https://github.com/emergentdotorg/cloud-storage-maven/tree/master/AzureStorageWagon)
