@@ -2,14 +2,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.gkatzioura.maven.cloud</groupId>
+    <groupId>org.emergent.maven.cloud</groupId>
     <artifactId>cloud-storage-maven</artifactId>
+    <version>2.3.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <version>2.3-em-2-SNAPSHOT</version>
-  
+
     <name>Cloud Storage</name>
-    <description>The CloudStorage project enables you to use the storage options of cloud provides (Google Cloud) storage as maven repositories.</description>
-    <url>https://github.com/emergentdotorg/CloudStorage</url>
+    <description>The CloudStorage project enables use of cloud storage options as maven repositories.</description>
+    <url>https://github.com/emergentdotorg/CloudStorageMaven</url>
 
     <licenses>
         <license>
@@ -28,13 +28,6 @@
         </developer>
     </developers>
 
-    <scm>
-        <url>https://github.com/emergentdotorg/CloudStorage</url>
-        <connection>scm:git:https://github.com/emergentdotorg/CloudStorage.git</connection>
-        <developerConnection>scm:git:https://github.com/emergentdotorg/CloudStorage.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
-
     <properties>
         <wagon.version>3.0.0</wagon.version>
         <logback.version>1.2.3</logback.version>
@@ -44,80 +37,86 @@
         <maven.plugin.annotations.version>3.4</maven.plugin.annotations.version>
     </properties>
 
+    <scm>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
+<!--        <developerConnection>scm:git:git@github.com:emergentdotorg/CloudStorageMaven</developerConnection>-->
+        <url>https://github.com/emergentdotorg/CloudStorageMaven</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <distributionManagement>
         <repository>
-            <id>github-emergent</id>
-            <name>GitHub emergentdotorg Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/emergentdotorg/pkgrepo</url>
+            <id>github-emergentdotorg</id>
+            <name>GitHub Emergent.org Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/emergentdotorg/maven-repository</url>
         </repository>
-        <snapshotRepository>
-            <id>github-emergent</id>
-            <name>GitHub emergentdotorg Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/emergentdotorg/pkgrepo</url>
-        </snapshotRepository>
     </distributionManagement>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.7.0</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.1</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.6.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.1.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <configuration>
+                        <tagNameFormat>@{project.version}</tagNameFormat>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.6</version>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.4.2</version>
-                <configuration>
-                    <tagNameFormat>@{project.version}</tagNameFormat>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <releaseProfiles>releases</releaseProfiles>
-                </configuration>
             </plugin>
         </plugins>
     </build>

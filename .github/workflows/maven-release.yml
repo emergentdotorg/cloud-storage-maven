@@ -1,0 +1,96 @@
+# This workflow will build a Java project with Maven, and cache/restore
+# any dependencies to improve the workflow execution time. For more information see:
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+
+name: Java Maven Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      next-release-version:
+        description: 'Next Release Version'
+      next-snapshot-version:
+        description: 'Next Snapshot Version'
+
+env:
+  DEPLOY_REPO_ID: github-emergentdotorg
+  DEPLOY_USERNAME: ${{ secrets.deploy_username }}
+  DEPLOY_PASSWORD: ${{ secrets.deploy_password }}
+  DEPLOY_SSH_KEY: ${{ secrets.SSH_MVN_REPO_DEPLOY_KEY }}
+
+jobs:
+
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '1.8'
+          distribution: 'temurin'
+          cache: maven
+          settings-path: ${{ github.workspace }} # directory for the settings.xml file
+
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.8.8
+
+      - name: Set up Maven settings.xml
+        uses: s4u/maven-settings-action@v3.0.0
+        with:
+          path: ${{ github.workspace }}/settings.xml
+          servers: |
+            [{
+              "id": "${{ env.DEPLOY_REPO_ID }}",
+              "username": "${env.DEPLOY_USERNAME}",
+              "password": "${env.DEPLOY_PASSWORD}"
+             },{
+              "id": "github-emergentdotorg",
+              "username": "${env.DEPLOY_USERNAME}",
+              "password": "${env.DEPLOY_PASSWORD}"
+            }]
+
+      - name: Release with Maven
+        shell: bash
+        env:
+          RELEASE_PLUGIN_COORDS: org.apache.maven.plugins:maven-release-plugin:3.1.1
+        run: |
+          MVN_REL_VER="${{ github.event.inputs.next-release-version }}"
+          MVN_DEV_VER="${{ github.event.inputs.next-snapshot-version }}"
+
+          echo MVN_REL_VER=$MVN_REL_VER
+          echo MVN_DEV_VER=$MVN_DEV_VER
+          echo RELEASE_PLUGIN_COORDS=$RELEASE_PLUGIN_COORDS
+
+          argargarr=( )
+          argargarr+=( "-Dmaven.javadoc.skip=true" )
+
+          dargarr=( )
+          dargarr+=( "-Dresume=false" )
+          dargarr+=( "-DpushChanges=true" )
+          dargarr+=( "-DlocalCheckout=true" )
+          dargarr+=( "-DtagNameFormat=@{project.version}" )
+          dargarr+=( "-DscmCommentPrefix=[GitHub] " )
+          dargarr+=( "-Darguments=${argargarr[*]}" )
+
+          if [ ! -z "$MVN_REL_VER" ] ; then
+            dargarr+=( "-DreleaseVersion=$MVN_REL_VER" )
+          fi
+          if [ ! -z "$MVN_DEV_VER" ] ; then
+            dargarr+=( "-DdevelopmentVersion=$MVN_DEV_VER" )
+          fi     
+
+          pargarr=( "-s" "$GITHUB_WORKSPACE/settings.xml" )
+
+          mvn -B "${dargarr[@]}" \
+            $RELEASE_PLUGIN_COORDS:prepare \
+            $RELEASE_PLUGIN_COORDS:perform \
+            "${pargarr[@]}"
+
+          rc=$? ; if [ ${rc} -ne 0 ] ; then echo "Error in prepare, exit code was $rc" ; exit $rc ; fi
+
+#          git push --follow-tags --atomic
+#          rc=$? ; if [ ${rc} -ne 0 ] ; then echo "Error running git push" ; exit $rc ; fi
