@@ -97,6 +97,10 @@
                                     <pattern>com.fasterxml.jackson</pattern>
                                     <shadedPattern>com.vorstella.shade.com.fasterxml.jackson</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.io</pattern>
+                                    <shadedPattern>com.vorstella.shade.org.apache.commons.io</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
