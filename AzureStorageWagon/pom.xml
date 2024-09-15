@@ -43,7 +43,7 @@
             <version>${azure-storage.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.gkatzioura.maven.cloud</groupId>
+            <groupId>org.emergent.maven.cloud</groupId>
             <artifactId>cloud-storage-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
