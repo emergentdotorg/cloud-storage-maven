@@ -98,8 +98,10 @@
                     <artifactId>maven-release-plugin</artifactId>
                     <version>3.1.1</version>
                     <configuration>
+                        <arguments>-Dmaven.javadoc.skip=true</arguments>
                         <tagNameFormat>@{project.version}</tagNameFormat>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <localCheckout>true</localCheckout>
                     </configuration>
                 </plugin>
             </plugins>
