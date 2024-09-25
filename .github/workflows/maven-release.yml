@@ -11,8 +11,7 @@ on:
 env:
   DEPLOY_USERNAME: ${{ secrets.maven_central_actor }}
   DEPLOY_PASSWORD: ${{ secrets.maven_central_token }}
-  MAVEN_GPG_KEY: ${{ secrets.maven_gpg_key }}
-  MAVEN_GPG_PASSPHRASE: ${{ secrets.maven_gpg_passphrase }}
+  GPG_PASSPHRASE: ${{ secrets.maven_gpg_passphrase }}
 
 jobs:
   release:
@@ -29,7 +28,7 @@ jobs:
           server-id: central
           server-username: DEPLOY_USERNAME
           server-password: DEPLOY_PASSWORD
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+          gpg-passphrase: GPG_PASSPHRASE
           gpg-private-key: ${{ secrets.maven_gpg_private_key }}
 
       - shell: bash
