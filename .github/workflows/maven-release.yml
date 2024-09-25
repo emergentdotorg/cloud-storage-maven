@@ -1,8 +1,4 @@
-# This workflow will build a Java project with Maven, and cache/restore
-# any dependencies to improve the workflow execution time. For more information see:
-# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-name: Java Maven Release
+name: Maven Release
 
 on:
   workflow_dispatch:
@@ -13,77 +9,74 @@ on:
         description: 'Next Snapshot Version'
 
 env:
-  DEPLOY_REPO_ID: github-emergentdotorg
-  DEPLOY_USERNAME: ${{ secrets.deploy_username }}
-  DEPLOY_PASSWORD: ${{ secrets.deploy_password }}
+  DEPLOY_USERNAME: ${{ secrets.maven_central_actor }}
+  DEPLOY_PASSWORD: ${{ secrets.maven_central_token }}
+  MAVEN_GPG_KEY: ${{ secrets.maven_gpg_key }}
+  MAVEN_GPG_PASSPHRASE: ${{ secrets.maven_gpg_passphrase }}
 
 jobs:
-
   release:
     runs-on: ubuntu-20.04
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDKs
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
+          settings-path: ${{ github.workspace }}
           distribution: 'temurin'
-          java-version: |
-            8
-          mvn-toolchain-vendor: Eclipse Temurin
-          cache: maven
-          server-id: ${{ env.DEPLOY_REPO_ID }}
-          server-username: 'DEPLOY_USERNAME'
-          server-password: 'DEPLOY_PASSWORD'
-          settings-path: ${{ github.workspace }} # directory for the settings.xml file
+          java-version: '8'
+          server-id: central
+          server-username: DEPLOY_USERNAME
+          server-password: DEPLOY_PASSWORD
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+          gpg-private-key: ${{ secrets.maven_gpg_private_key }}
 
-      - name: Set up Maven
-        uses: stCarolas/setup-maven@v5
-        with:
-          maven-version: 3.8.8
-
-      - name: Release with Maven
-        shell: bash
+      - shell: bash
         env:
-          RELEASE_PLUGIN_COORDS: org.apache.maven.plugins:maven-release-plugin:3.1.1
+          GIT_RELEASE_BOT_NAME: 'github-actions[bot]'
+          GIT_RELEASE_BOT_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+        # language="shell script"
         run: |
-          NEXT_REL_VER="${{ github.event.inputs.next-release-version }}"
-          NEXT_DEV_VER="${{ github.event.inputs.next-snapshot-version }}"
+          [ -z "$(git config --get user.name)" ] && git config --local user.name "${GIT_RELEASE_BOT_NAME}"
+          [ -z "$(git config --get user.email)" ] && git config  --local user.email "${GIT_RELEASE_BOT_EMAIL}"
 
-          echo NEXT_REL_VER=$NEXT_REL_VER
-          echo NEXT_DEV_VER=$NEXT_DEV_VER
-               
-          function getRelProp {
-            grep "^${1}=" release.properties|cut -d'=' -f2
-          }
-          
-          function execMvn {
-            local argsargs=( )
-            local anteargs=( )
-            local postargs=( )
+      - uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.8
 
-            argsargs+=( "-Dmaven.javadoc.skip=true" )
+      - name: Copy Version Info
+        id: copy-version
+        shell: bash
+        # language="shell script"
+        run: |
+          version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT//')
+          echo "version=$version" >> $GITHUB_OUTPUT
 
-            anteargs+=( "-B" )
-            anteargs+=( "-Dresume=false" )
-            anteargs+=( "-DpushChanges=true" )
-            anteargs+=( "-DlocalCheckout=true" )
-            anteargs+=( "-DtagNameFormat=@{project.version}" )
-            anteargs+=( "-DscmCommentPrefix=[GitHub] " )
-            if [ ! -z "$NEXT_REL_VER" ] ; then anteargs+=( "-DreleaseVersion=$NEXT_REL_VER" ) ; fi
-            if [ ! -z "$NEXT_DEV_VER" ] ; then anteargs+=( "-DdevelopmentVersion=$NEXT_DEV_VER" ) ; fi       
-            anteargs+=( "-Darguments=${argsargs[*]}" )
+      - shell: bash
+        id: exec-maven-release
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+          NEXT_REL_VERSION: ${{ inputs.next-release-version }}
+          NEXT_DEV_VERSION: ${{ inputs.next-snapshot-version }}
+        # language="shell script"
+        run: |
+          declare -a mvnArgsArr=( "-B" )
+          if [ -n "${NEXT_REL_VERSION}" ] ; then
+            mvnArgsArr+=( "-DreleaseVersion=${RELEASE_VERSION}" )
+          fi
+          if [ -n "${NEXT_DEV_VERSION}" ] ; then
+            mvnArgsArr+=( "-DdevelopmentVersion=${DEVELOPMENT_VERSION}" )
+          fi
+          mvnArgsArr+=( "--no-transfer-progress" )
+          mvnArgsArr+=( "-DpushChanges=false" )
+          mvnArgsArr+=( "-DlocalCheckout=true" )
+          mvnArgsArr+=( "-DscmCommentPrefix=[GitHub] " )
+          mvnArgsArr+=( "-DtagNameFormat=@{project.version}" )
+          mvnArgsArr+=( "-Darguments=--no-transfer-progress" )
+          mvnArgsArr+=( "-s" "${GITHUB_WORKSPACE}/settings.xml" )
+          mvn "${mvnArgsArr[@]}" release:prepare release:perform
 
-            postargs+=( "-s" "$GITHUB_WORKSPACE/settings.xml" )
-            mvn "${anteargs[@]}" \
-              "$@" \
-              "${postargs[@]}"
-            rc=$? ; if [ ${rc} -ne 0 ] ; then echo "Error in prepare & perform, exit code was $rc" ; return $rc ; fi
-          }
-
-          execMvn $RELEASE_PLUGIN_COORDS:prepare $RELEASE_PLUGIN_COORDS:perform
-          rc=$? ; if [ ${rc} -ne 0 ] ; then echo "Error in prepare, exit code was $rc" ; exit $rc ; fi
-
-#          git push --follow-tags --atomic
-#          rc=$? ; if [ ${rc} -ne 0 ] ; then echo "Error running git push" ; exit $rc ; fi
+      - name: Commit Maven Release
+        if: ${{ success() }}
+        run: git push --follow-tags --atomic

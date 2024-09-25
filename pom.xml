@@ -4,7 +4,7 @@
 
     <groupId>org.emergent.maven.cloud</groupId>
     <artifactId>cloud-storage-maven</artifactId>
-    <version>2.3.3-SNAPSHOT</version>
+    <version>2.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Cloud Storage</name>
@@ -21,6 +21,12 @@
 
     <developers>
         <developer>
+            <name>Patrick Woodworth</name>
+            <email>patrick@woodworth.org</email>
+            <organization>Emergent.org</organization>
+            <organizationUrl>https://emergent.org</organizationUrl>
+        </developer>
+        <developer>
             <name>Emmanouil Gkatziouras</name>
             <email>emmanouil@gmail.com</email>
             <organization>egkatzioura</organization>
@@ -29,13 +35,14 @@
     </developers>
 
     <scm>
-        <connection>scm:git:${project.scm.url}</connection>
-        <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <url>https://github.com/emergentdotorg/cloud-storage-maven</url>
+        <connection>scm:git:git://github.com/emergentdotorg/cloud-storage-maven.git</connection>
+        <developerConnection>scm:git:ssh://github.com:emergentdotorg/cloud-storage-maven.git</developerConnection>
+        <url>http://github.com/emergentdotorg/cloud-storage-maven/tree/master</url>
         <tag>HEAD</tag>
     </scm>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <wagon.version>3.0.0</wagon.version>
         <logback.version>1.2.3</logback.version>
         <commons-io.version>2.6</commons-io.version>
@@ -43,14 +50,6 @@
         <maven.plugin.api.version>3.0</maven.plugin.api.version>
         <maven.plugin.annotations.version>3.4</maven.plugin.annotations.version>
     </properties>
-
-    <distributionManagement>
-        <repository>
-            <id>github-emergentdotorg</id>
-            <name>GitHub Emergent.org Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/emergentdotorg/maven-repository</url>
-        </repository>
-    </distributionManagement>
 
     <build>
         <pluginManagement>
@@ -81,11 +80,34 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>3.6.3</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.2.5</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.1.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <configuration>
+                        <tagNameFormat>@{project.version}</tagNameFormat>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <releaseProfiles>release</releaseProfiles>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -108,5 +130,60 @@
         <module>AzureStorageWagon</module>
         <module>S3StorageWagon</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-gpg-plugin</artifactId>
+                            <version>3.2.4</version>
+                            <executions>
+                                <execution>
+                                    <id>sign-artifacts</id>
+                                    <phase>verify</phase>
+                                    <goals>
+                                        <goal>sign</goal>
+                                    </goals>
+                                    <configuration>
+                                        <gpgArguments>
+                                            <arg>--pinentry-mode</arg>
+                                            <arg>loopback</arg>
+                                        </gpgArguments>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.sonatype.central</groupId>
+                            <artifactId>central-publishing-maven-plugin</artifactId>
+                            <version>0.6.0</version>
+                            <extensions>true</extensions>
+                            <configuration>
+                                <publishingServerId>central</publishingServerId>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
