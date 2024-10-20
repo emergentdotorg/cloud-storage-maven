@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.emergent.maven.cloud</groupId>
     <artifactId>cloud-storage-maven</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>3.0</version>
   </parent>
 
   <artifactId>azure-storage-wagon</artifactId>
