@@ -5,7 +5,7 @@
 
   <groupId>org.emergent.maven.cloud</groupId>
   <artifactId>cloud-storage-maven</artifactId>
-  <version>3.0</version>
+  <version>3.1-SNAPSHOT</version>
 
   <packaging>pom</packaging>
 
@@ -46,7 +46,7 @@
   <scm>
     <connection>scm:git:git://github.com/emergentdotorg/cloud-storage-maven.git</connection>
     <developerConnection>scm:git:ssh://github.com:emergentdotorg/cloud-storage-maven.git</developerConnection>
-    <tag>3.0</tag>
+    <tag>HEAD</tag>
     <url>http://github.com/emergentdotorg/cloud-storage-maven/tree/master</url>
   </scm>
 
