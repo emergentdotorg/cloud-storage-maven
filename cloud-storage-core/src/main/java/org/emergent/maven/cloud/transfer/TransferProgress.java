@@ -18,6 +18,5 @@ package org.emergent.maven.cloud.transfer;
 
 public interface TransferProgress {
 
-    void progress(byte[] buffer, int length);
-
+  void progress(byte[] buffer, int length);
 }

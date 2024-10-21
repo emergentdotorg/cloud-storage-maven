@@ -18,38 +18,37 @@ package org.emergent.maven.cloud.wagon;
 
 public class PublicReadProperty {
 
-    private static final String PUBLIC_REPOSITORY_PROP_TAG = "publicRepository";
-    private static final String PUBLIC_REPOSITORY_ENV_TAG = "PUBLIC_REPOSITORY";
+  private static final String PUBLIC_REPOSITORY_PROP_TAG = "publicRepository";
+  private static final String PUBLIC_REPOSITORY_ENV_TAG = "PUBLIC_REPOSITORY";
 
-    private Boolean publicRepository;
+  private Boolean publicRepository;
 
-    /**
-     *
-     * @param publicRepository may be null
-     */
-    public PublicReadProperty(Boolean publicRepository) {
-        this.publicRepository = publicRepository;
+  /**
+   * @param publicRepository may be null
+   */
+  public PublicReadProperty(Boolean publicRepository) {
+    this.publicRepository = publicRepository;
+  }
+
+  /**
+   * return the publicRepository set in the constructor or the publicRepository set using the
+   * PUBLIC_REPOSITORY system property
+   */
+  public boolean get() {
+    if (publicRepository != null) {
+      return publicRepository;
     }
 
-    /**
-     * return the publicRepository set in the constructor or the publicRepository set using the PUBLIC_REPOSITORY system property
-     * */
-    public boolean get() {
-        if (publicRepository != null){
-            return publicRepository;
-        }
-
-        String publicRepositoryProp = System.getProperty(PUBLIC_REPOSITORY_PROP_TAG);
-        if(publicRepositoryProp != null) {
-            return Boolean.valueOf(publicRepositoryProp);
-        }
-
-        String publicRepositoryEnv = System.getenv(PUBLIC_REPOSITORY_ENV_TAG);
-        if(publicRepositoryEnv!= null) {
-            return Boolean.valueOf(publicRepositoryEnv);
-        }
-
-        return false;
+    String publicRepositoryProp = System.getProperty(PUBLIC_REPOSITORY_PROP_TAG);
+    if (publicRepositoryProp != null) {
+      return Boolean.valueOf(publicRepositoryProp);
     }
 
+    String publicRepositoryEnv = System.getenv(PUBLIC_REPOSITORY_ENV_TAG);
+    if (publicRepositoryEnv != null) {
+      return Boolean.valueOf(publicRepositoryEnv);
+    }
+
+    return false;
+  }
 }

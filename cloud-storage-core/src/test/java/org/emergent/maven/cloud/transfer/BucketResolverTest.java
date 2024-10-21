@@ -23,13 +23,12 @@ import org.junit.Test;
 
 public class BucketResolverTest {
 
-    @Test
-    public void testResolve() {
+  @Test
+  public void testResolve() {
 
-        BucketResolver bucketResolver = new BucketResolver();
-        Repository repository = new Repository("test-repo","gs://test-repo/release");
-        String bucketName = bucketResolver.resolve(repository);
-        Assert.assertEquals("test-repo",bucketName);
-    }
-
+    BucketResolver bucketResolver = new BucketResolver();
+    Repository repository = new Repository("test-repo", "gs://test-repo/release");
+    String bucketName = bucketResolver.resolve(repository);
+    Assert.assertEquals("test-repo", bucketName);
+  }
 }

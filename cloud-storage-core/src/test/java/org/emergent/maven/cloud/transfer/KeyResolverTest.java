@@ -22,36 +22,35 @@ import org.junit.Test;
 
 public class KeyResolverTest {
 
-    @Test
-    public void resolveSlashDirectories() {
+  @Test
+  public void resolveSlashDirectories() {
 
-        KeyResolver keyResolver = new KeyResolver();
-        String directoryJoin = keyResolver.resolve("/t/","/tesanother/key/");
-        Assert.assertEquals("t/tesanother/key", directoryJoin);
-    }
+    KeyResolver keyResolver = new KeyResolver();
+    String directoryJoin = keyResolver.resolve("/t/", "/tesanother/key/");
+    Assert.assertEquals("t/tesanother/key", directoryJoin);
+  }
 
-    @Test
-    public void resolveEmptyBaseDirectory() {
+  @Test
+  public void resolveEmptyBaseDirectory() {
 
-        KeyResolver keyResolver = new KeyResolver();
-        String directoryJoin = keyResolver.resolve("","/tesanother/key/");
-        Assert.assertEquals("tesanother/key", directoryJoin);
-    }
+    KeyResolver keyResolver = new KeyResolver();
+    String directoryJoin = keyResolver.resolve("", "/tesanother/key/");
+    Assert.assertEquals("tesanother/key", directoryJoin);
+  }
 
-    @Test
-    public void testResolveSimple() {
+  @Test
+  public void testResolveSimple() {
 
-        KeyResolver keyResolver = new KeyResolver();
-        String directoryJoin = keyResolver.resolve("/tesanother/key/");
-        Assert.assertEquals("tesanother/key", directoryJoin);
-    }
+    KeyResolver keyResolver = new KeyResolver();
+    String directoryJoin = keyResolver.resolve("/tesanother/key/");
+    Assert.assertEquals("tesanother/key", directoryJoin);
+  }
 
-    @Test
-    public void testResolveConcat() {
+  @Test
+  public void testResolveConcat() {
 
-        KeyResolver keyResolver = new KeyResolver();
-        String directoryJoin = keyResolver.resolve("test-repo/release/production/", "/tesanother/key");
-        Assert.assertEquals("test-repo/release/production/tesanother/key", directoryJoin);
-    }
-
+    KeyResolver keyResolver = new KeyResolver();
+    String directoryJoin = keyResolver.resolve("test-repo/release/production/", "/tesanother/key");
+    Assert.assertEquals("test-repo/release/production/tesanother/key", directoryJoin);
+  }
 }

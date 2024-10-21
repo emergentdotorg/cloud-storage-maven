@@ -16,47 +16,48 @@
 
 package org.emergent.maven.cloud.abs;
 
+import java.util.logging.Logger;
 import org.apache.maven.wagon.authentication.AuthenticationException;
 import org.apache.maven.wagon.authentication.AuthenticationInfo;
 
-import java.util.logging.Logger;
-
 public class ConnectionStringFactory {
 
-    private static final String CONNECTION_STRING_TEMPLATE = "DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s;EndpointSuffix=core.windows.net";
+  private static final String CONNECTION_STRING_TEMPLATE =
+      "DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s;EndpointSuffix=core.windows.net";
 
-    private static final Logger LOGGER = Logger.getLogger(ConnectionStringFactory.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(ConnectionStringFactory.class.getName());
 
-    public String create(AuthenticationInfo authenticationInfo) throws AuthenticationException {
+  public String create(AuthenticationInfo authenticationInfo) throws AuthenticationException {
 
-        if(authenticationInfo==null) {
-            throw new AuthenticationException("Please provide storage account credentials");
-        }
-
-        String username = authenticationInfo.getUserName();
-        String password = authenticationInfo.getPassword();
-
-        if (username == null || username.isEmpty()) {
-            return password;
-        } else {
-            return String.format(CONNECTION_STRING_TEMPLATE, username, password);
-        }
+    if (authenticationInfo == null) {
+      throw new AuthenticationException("Please provide storage account credentials");
     }
 
-    /**
-     * This shall create the connection string based on the environmental params
-     * @return
-     * @throws AuthenticationException
-     */
-    public String create() throws AuthenticationException {
-        String accountName = System.getenv("ACCOUNT_NAME");
-        String accountKey = System.getenv("ACCOUNT_KEY");
+    String username = authenticationInfo.getUserName();
+    String password = authenticationInfo.getPassword();
 
-        if(accountName ==null || accountKey == null) {
-            throw new AuthenticationException("Please provide storage account credentials using environmental variables");
-        }
+    if (username == null || username.isEmpty()) {
+      return password;
+    } else {
+      return String.format(CONNECTION_STRING_TEMPLATE, username, password);
+    }
+  }
 
-        return String.format(CONNECTION_STRING_TEMPLATE,accountName,accountKey);
+  /**
+   * This shall create the connection string based on the environmental params
+   *
+   * @return
+   * @throws AuthenticationException
+   */
+  public String create() throws AuthenticationException {
+    String accountName = System.getenv("ACCOUNT_NAME");
+    String accountKey = System.getenv("ACCOUNT_KEY");
+
+    if (accountName == null || accountKey == null) {
+      throw new AuthenticationException(
+          "Please provide storage account credentials using environmental variables");
     }
 
+    return String.format(CONNECTION_STRING_TEMPLATE, accountName, accountKey);
+  }
 }

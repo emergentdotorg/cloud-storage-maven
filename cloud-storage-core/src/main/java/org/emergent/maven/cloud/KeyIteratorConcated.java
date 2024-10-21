@@ -22,44 +22,44 @@ import java.util.function.Consumer;
 
 public class KeyIteratorConcated<T> implements Iterator<T> {
 
-    private final List<Iterator<T>> iterators;
+  private final List<Iterator<T>> iterators;
 
-    public KeyIteratorConcated(List<Iterator<T>> iterators) {
-        this.iterators = iterators;
+  public KeyIteratorConcated(List<Iterator<T>> iterators) {
+    this.iterators = iterators;
+  }
+
+  @Override
+  public boolean hasNext() {
+    if (iterators.size() > 0) {
+      if (!iterators.get(0).hasNext()) {
+        iterators.remove(0);
+        return hasNext();
+      }
+
+      return true;
     }
 
-    @Override
-    public boolean hasNext() {
-        if(iterators.size()>0) {
-            if(!iterators.get(0).hasNext()) {
-                iterators.remove(0);
-                return hasNext();
-            }
+    return false;
+  }
 
-            return true;
-        }
-
-        return false;
+  @Override
+  public T next() {
+    if (!hasNext()) {
+      return null;
     }
 
-    @Override
-    public T next() {
-        if(!hasNext()) {
-            return null;
-        }
+    Iterator<T> stringIterator = iterators.get(0);
 
-        Iterator<T> stringIterator = iterators.get(0);
+    return stringIterator.next();
+  }
 
-        return stringIterator.next();
-    }
+  @Override
+  public void remove() {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void forEachRemaining(Consumer<? super T> action) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public void forEachRemaining(Consumer<? super T> action) {
+    throw new UnsupportedOperationException();
+  }
 }

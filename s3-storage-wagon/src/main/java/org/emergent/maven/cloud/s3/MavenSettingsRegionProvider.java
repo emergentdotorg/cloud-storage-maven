@@ -5,14 +5,14 @@ import com.amazonaws.regions.AwsRegionProvider;
 
 public class MavenSettingsRegionProvider extends AwsRegionProvider {
 
-    public final String settingsRegion;
+  public final String settingsRegion;
 
-    public MavenSettingsRegionProvider(String settingsRegion) {
-        this.settingsRegion = settingsRegion;
-    }
+  public MavenSettingsRegionProvider(String settingsRegion) {
+    this.settingsRegion = settingsRegion;
+  }
 
-    @Override
-    public String getRegion() throws SdkClientException {
-        return settingsRegion;
-    }
+  @Override
+  public String getRegion() throws SdkClientException {
+    return settingsRegion;
+  }
 }

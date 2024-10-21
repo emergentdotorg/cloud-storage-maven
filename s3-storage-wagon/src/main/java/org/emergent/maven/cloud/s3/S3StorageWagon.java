@@ -17,6 +17,14 @@
 package org.emergent.maven.cloud.s3;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import java.io.File;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.PathUtils;
@@ -35,195 +43,210 @@ import org.emergent.maven.cloud.transfer.TransferProgressImpl;
 import org.emergent.maven.cloud.wagon.AbstractStorageWagon;
 import org.emergent.maven.cloud.wagon.PublicReadProperty;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 public class S3StorageWagon extends AbstractStorageWagon {
 
-    private S3StorageRepository s3StorageRepository;
-    private final KeyResolver keyResolver = new KeyResolver();
+  private S3StorageRepository s3StorageRepository;
+  private final KeyResolver keyResolver = new KeyResolver();
 
-    private String region;
-    private Boolean publicRepository;
+  private String region;
+  private Boolean publicRepository;
 
-    private static final Logger LOGGER = Logger.getLogger(S3StorageWagon.class.getName());
-    private String endpoint;
-    private String pathStyleEnabled;
+  private static final Logger LOGGER = Logger.getLogger(S3StorageWagon.class.getName());
+  private String endpoint;
+  private String pathStyleEnabled;
 
-    @Override
-    public void get(String resourceName, File file) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+  @Override
+  public void get(String resourceName, File file)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
 
-        Resource resource = new Resource(resourceName);
-        transferListenerContainer.fireTransferInitiated(resource, TransferEvent.REQUEST_GET);
-        transferListenerContainer.fireTransferStarted(resource, TransferEvent.REQUEST_GET, file);
+    Resource resource = new Resource(resourceName);
+    transferListenerContainer.fireTransferInitiated(resource, TransferEvent.REQUEST_GET);
+    transferListenerContainer.fireTransferStarted(resource, TransferEvent.REQUEST_GET, file);
 
-        final TransferProgress transferProgress = new TransferProgressImpl(resource, TransferEvent.REQUEST_GET, transferListenerContainer);
+    final TransferProgress transferProgress =
+        new TransferProgressImpl(resource, TransferEvent.REQUEST_GET, transferListenerContainer);
 
-        try {
-            s3StorageRepository.copy(resourceName,file,transferProgress);
-            transferListenerContainer.fireTransferCompleted(resource,TransferEvent.REQUEST_GET);
-        } catch (Exception e) {
-            transferListenerContainer.fireTransferError(resource,TransferEvent.REQUEST_GET,e);
-            throw e;
-        }
+    try {
+      s3StorageRepository.copy(resourceName, file, transferProgress);
+      transferListenerContainer.fireTransferCompleted(resource, TransferEvent.REQUEST_GET);
+    } catch (Exception e) {
+      transferListenerContainer.fireTransferError(resource, TransferEvent.REQUEST_GET, e);
+      throw e;
+    }
+  }
+
+  @Override
+  public void put(File file, String resourceName)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+
+    Resource resource = new Resource(resourceName);
+
+    LOGGER.log(
+        Level.FINER,
+        String.format("Uploading file %s to %s", file.getAbsolutePath(), resourceName));
+
+    transferListenerContainer.fireTransferInitiated(resource, TransferEvent.REQUEST_PUT);
+    transferListenerContainer.fireTransferStarted(resource, TransferEvent.REQUEST_PUT, file);
+    final TransferProgress transferProgress =
+        new TransferProgressImpl(resource, TransferEvent.REQUEST_PUT, transferListenerContainer);
+
+    try {
+      s3StorageRepository.put(file, resourceName, transferProgress);
+      transferListenerContainer.fireTransferCompleted(resource, TransferEvent.REQUEST_PUT);
+    } catch (TransferFailedException e) {
+      transferListenerContainer.fireTransferError(resource, TransferEvent.REQUEST_PUT, e);
+      throw e;
+    }
+  }
+
+  @Override
+  public boolean getIfNewer(String resourceName, File file, long timeStamp)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+
+    if (s3StorageRepository.newResourceAvailable(resourceName, timeStamp)) {
+      get(resourceName, file);
+      return true;
     }
 
-    @Override
-    public void put(File file, String resourceName) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+    return false;
+  }
 
-        Resource resource = new Resource(resourceName);
-
-        LOGGER.log(Level.FINER, String.format("Uploading file %s to %s", file.getAbsolutePath(), resourceName));
-
-        transferListenerContainer.fireTransferInitiated(resource,TransferEvent.REQUEST_PUT);
-        transferListenerContainer.fireTransferStarted(resource,TransferEvent.REQUEST_PUT, file);
-        final TransferProgress transferProgress = new TransferProgressImpl(resource, TransferEvent.REQUEST_PUT, transferListenerContainer);
-
-        try {
-            s3StorageRepository.put(file, resourceName,transferProgress);
-            transferListenerContainer.fireTransferCompleted(resource, TransferEvent.REQUEST_PUT);
-        } catch (TransferFailedException e) {
-            transferListenerContainer.fireTransferError(resource,TransferEvent.REQUEST_PUT,e);
-            throw e;
-        }
+  @Override
+  public void putDirectory(File source, String destination)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+    Collection<File> allFiles = FileUtils.listFiles(source, null, true);
+    String relativeDestination = destination;
+    // removes the initial .
+    if (destination != null && destination.startsWith(".")) {
+      relativeDestination = destination.length() == 1 ? "" : destination.substring(1);
     }
-
-    @Override
-    public boolean getIfNewer(String resourceName, File file, long timeStamp) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
-
-        if(s3StorageRepository.newResourceAvailable(resourceName,timeStamp)) {
-            get(resourceName,file);
-            return true;
-        }
-
-        return false;
+    for (File file : allFiles) {
+      // compute relative path
+      String relativePath = PathUtils.toRelative(source, file.getAbsolutePath());
+      put(file, relativeDestination + "/" + relativePath);
     }
+  }
 
-    @Override
-    public void putDirectory(File source, String destination) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
-        Collection<File> allFiles = FileUtils.listFiles(source, null, true);
-        String relativeDestination = destination;
-        //removes the initial .
-        if (destination != null && destination.startsWith(".")){
-            relativeDestination = destination.length() == 1 ? "" : destination.substring(1);
-        }
-        for (File file : allFiles) {
-            //compute relative path
-            String relativePath = PathUtils.toRelative(source, file.getAbsolutePath());
-            put(file, relativeDestination +"/"+relativePath);
-        }
+  @Override
+  public boolean resourceExists(String resourceName)
+      throws TransferFailedException, AuthorizationException {
+    return s3StorageRepository.exists(resourceName);
+  }
+
+  @Override
+  public List<String> getFileList(String s)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+    try {
+      List<String> list = s3StorageRepository.list(s);
+      list = convertS3ListToMavenFileList(list, s);
+      if (list.isEmpty()) {
+        throw new ResourceDoesNotExistException(s); // expected by maven
+      }
+      return list;
+    } catch (AmazonS3Exception e) {
+      throw new TransferFailedException("Could not fetch objects for prefix " + s);
     }
+  }
 
-    @Override
-    public boolean resourceExists(String resourceName) throws TransferFailedException, AuthorizationException {
-        return s3StorageRepository.exists(resourceName);
+  // removes the prefix path
+  // adds folders files
+  private List<String> convertS3ListToMavenFileList(List<String> list, String path) {
+    String prefix = keyResolver.resolve(s3StorageRepository.getBaseDirectory(), path);
+    Set<String> folders = new HashSet<>();
+    List<String> result =
+        list.stream()
+            .map(
+                key -> {
+                  String filePath = key;
+                  // removes the prefix from the object path
+                  if (prefix != null && prefix.length() > 0) {
+                    filePath = key.substring(prefix.length() + 1);
+                  }
+                  extractFolders(folders, filePath);
+                  return filePath;
+                })
+            .collect(Collectors.toList());
+    result.addAll(folders);
+    return result;
+  }
+
+  private void extractFolders(Set<String> folders, String filePath) {
+    if (filePath.contains("/")) {
+      String folder = filePath.substring(0, filePath.lastIndexOf('/'));
+      folders.add(folder + '/');
+      if (folder.contains("/")) { // recurse
+        extractFolders(folders, folder);
+      } // else we already stored it.
+    } else {
+      folders.add(filePath);
     }
+  }
 
-    @Override
-    public List<String> getFileList(String s) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
-        try {
-            List<String> list = s3StorageRepository.list(s);
-            list = convertS3ListToMavenFileList(list, s);
-            if (list.isEmpty()){
-                throw new ResourceDoesNotExistException(s);//expected by maven
-            }
-            return list;
-        } catch (AmazonS3Exception e) {
-            throw new TransferFailedException("Could not fetch objects for prefix "+s);
-        }
-    }
+  @Override
+  public void connect(
+      Repository repository,
+      AuthenticationInfo authenticationInfo,
+      ProxyInfoProvider proxyInfoProvider)
+      throws ConnectionException, AuthenticationException {
 
-    //removes the prefix path
-    //adds folders files
-    private List<String> convertS3ListToMavenFileList(List<String> list, String path) {
-        String prefix = keyResolver.resolve( s3StorageRepository.getBaseDirectory(), path);
-        Set<String> folders = new HashSet<>();
-        List<String> result = list.stream().map( key -> {
-            String filePath = key;
-            //removes the prefix from the object path
-            if (prefix != null && prefix.length() > 0) {
-                filePath = key.substring(prefix.length() + 1);
-            }
-            extractFolders(folders, filePath);
-            return filePath;
-        }).collect(Collectors.toList());
-        result.addAll(folders);
-        return result;
-    }
+    this.repository = repository;
+    this.sessionListenerContainer.fireSessionOpening();
 
-    private void extractFolders(Set<String> folders, String filePath) {
-        if (filePath.contains("/")){
-            String folder = filePath.substring(0, filePath.lastIndexOf('/'));
-            folders.add(folder +'/');
-            if (folder.contains("/")) {//recurse
-                extractFolders(folders, folder);
-            }//else we already stored it.
-        }else{
-            folders.add(filePath);
-        }
-    }
+    final String bucket = accountResolver.resolve(repository);
+    final String directory = containerResolver.resolve(repository);
 
-    @Override
-    public void connect(Repository repository, AuthenticationInfo authenticationInfo, ProxyInfoProvider proxyInfoProvider) throws ConnectionException, AuthenticationException {
+    LOGGER.log(
+        Level.FINER,
+        String.format("Opening connection for bucket %s and directory %s", bucket, directory));
+    s3StorageRepository =
+        new S3StorageRepository(bucket, directory, new PublicReadProperty(publicRepository));
+    s3StorageRepository.connect(
+        authenticationInfo,
+        region,
+        new EndpointProperty(endpoint),
+        new PathStyleEnabledProperty(pathStyleEnabled));
 
-        this.repository = repository;
-        this.sessionListenerContainer.fireSessionOpening();
+    sessionListenerContainer.fireSessionLoggedIn();
+    sessionListenerContainer.fireSessionOpened();
+  }
 
-        final String bucket = accountResolver.resolve(repository);
-        final String directory = containerResolver.resolve(repository);
+  @Override
+  public void disconnect() throws ConnectionException {
+    sessionListenerContainer.fireSessionDisconnecting();
+    s3StorageRepository.disconnect();
+    sessionListenerContainer.fireSessionLoggedOff();
+    sessionListenerContainer.fireSessionDisconnected();
+  }
 
-        LOGGER.log(Level.FINER,String.format("Opening connection for bucket %s and directory %s",bucket,directory));
-        s3StorageRepository = new S3StorageRepository(bucket, directory, new PublicReadProperty(publicRepository));
-        s3StorageRepository.connect(authenticationInfo, region, new EndpointProperty(endpoint), new PathStyleEnabledProperty(pathStyleEnabled));
+  public String getRegion() {
+    return region;
+  }
 
-        sessionListenerContainer.fireSessionLoggedIn();
-        sessionListenerContainer.fireSessionOpened();
-    }
+  public void setRegion(String region) {
+    this.region = region;
+  }
 
-    @Override
-    public void disconnect() throws ConnectionException {
-        sessionListenerContainer.fireSessionDisconnecting();
-        s3StorageRepository.disconnect();
-        sessionListenerContainer.fireSessionLoggedOff();
-        sessionListenerContainer.fireSessionDisconnected();
-    }
+  public Boolean getPublicRepository() {
+    return publicRepository;
+  }
 
-	public String getRegion() {
-		return region;
-	}
+  public void setPublicRepository(Boolean publicRepository) {
+    this.publicRepository = publicRepository;
+  }
 
-	public void setRegion(String region) {
-		this.region = region;
-	}
+  public String getEndpoint() {
+    return endpoint;
+  }
 
-    public Boolean getPublicRepository() {
-        return publicRepository;
-    }
+  public void setEndpoint(String endpoint) {
+    this.endpoint = endpoint;
+  }
 
-    public void setPublicRepository(Boolean publicRepository) {
-        this.publicRepository = publicRepository;
-    }
+  public String getPathStyleAccessEnabled() {
+    return pathStyleEnabled;
+  }
 
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public String getPathStyleAccessEnabled() {
-        return pathStyleEnabled;
-    }
-
-    public void setPathStyleAccessEnabled(String pathStyleEnabled) {
-        this.pathStyleEnabled = pathStyleEnabled;
-    }
-
+  public void setPathStyleAccessEnabled(String pathStyleEnabled) {
+    this.pathStyleEnabled = pathStyleEnabled;
+  }
 }

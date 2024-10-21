@@ -20,14 +20,15 @@ import org.apache.maven.wagon.repository.Repository;
 
 public class BaseDirectoryResolver {
 
-    public String resolve(Repository repository) {
+  public String resolve(Repository repository) {
 
-        StringBuilder stringBuilder = new StringBuilder(repository.getBasedir()).deleteCharAt(0);
+    StringBuilder stringBuilder = new StringBuilder(repository.getBasedir()).deleteCharAt(0);
 
-        if ((stringBuilder.length() != 0) && (stringBuilder.charAt(stringBuilder.length() - 1) != '/')) {
-            stringBuilder.append('/');
-        }
-
-        return stringBuilder.toString();
+    if ((stringBuilder.length() != 0)
+        && (stringBuilder.charAt(stringBuilder.length() - 1) != '/')) {
+      stringBuilder.append('/');
     }
+
+    return stringBuilder.toString();
+  }
 }

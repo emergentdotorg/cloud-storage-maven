@@ -23,40 +23,39 @@ import org.junit.Test;
 
 public class BaseDirectoryResolverTest {
 
-    @Test
-    public void testResolveEmptySlash() {
+  @Test
+  public void testResolveEmptySlash() {
 
-        BaseDirectoryResolver directoryResolver = new BaseDirectoryResolver();
-        Repository repository = new Repository("test-repo","gs://test-repo/");
-        String baseDirectory = directoryResolver.resolve(repository);
-        Assert.assertTrue(baseDirectory.isEmpty());
-    }
+    BaseDirectoryResolver directoryResolver = new BaseDirectoryResolver();
+    Repository repository = new Repository("test-repo", "gs://test-repo/");
+    String baseDirectory = directoryResolver.resolve(repository);
+    Assert.assertTrue(baseDirectory.isEmpty());
+  }
 
-    @Test
-    public void testResolveEmpty() {
+  @Test
+  public void testResolveEmpty() {
 
-        BaseDirectoryResolver directoryResolver = new BaseDirectoryResolver();
-        Repository repository = new Repository("test-repo","gs://test-repo");
-        String baseDirectory = directoryResolver.resolve(repository);
-        Assert.assertTrue(baseDirectory.isEmpty());
-    }
+    BaseDirectoryResolver directoryResolver = new BaseDirectoryResolver();
+    Repository repository = new Repository("test-repo", "gs://test-repo");
+    String baseDirectory = directoryResolver.resolve(repository);
+    Assert.assertTrue(baseDirectory.isEmpty());
+  }
 
-    @Test
-    public void testResolve() {
+  @Test
+  public void testResolve() {
 
-        BaseDirectoryResolver directoryResolver = new BaseDirectoryResolver();
-        Repository repository = new Repository("test-repo","gs://test-repo/release");
-        String baseDirectory = directoryResolver.resolve(repository);
-        Assert.assertEquals("release/",baseDirectory);
-    }
+    BaseDirectoryResolver directoryResolver = new BaseDirectoryResolver();
+    Repository repository = new Repository("test-repo", "gs://test-repo/release");
+    String baseDirectory = directoryResolver.resolve(repository);
+    Assert.assertEquals("release/", baseDirectory);
+  }
 
-    @Test
-    public void testResolveSubDirectory() {
+  @Test
+  public void testResolveSubDirectory() {
 
-        BaseDirectoryResolver directoryResolver = new BaseDirectoryResolver();
-        Repository repository = new Repository("test-repo","gs://test-repo/release/production");
-        String baseDirectory = directoryResolver.resolve(repository);
-        Assert.assertEquals("release/production/",baseDirectory);
-    }
-
+    BaseDirectoryResolver directoryResolver = new BaseDirectoryResolver();
+    Repository repository = new Repository("test-repo", "gs://test-repo/release/production");
+    String baseDirectory = directoryResolver.resolve(repository);
+    Assert.assertEquals("release/production/", baseDirectory);
+  }
 }

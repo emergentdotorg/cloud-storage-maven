@@ -16,41 +16,39 @@
 
 package org.emergent.maven.cloud.s3;
 
-
 public class EndpointProperty {
 
-    private static final String S3_ENDPOINT = "S3_ENDPOINT";
-    private String endpoint;
+  private static final String S3_ENDPOINT = "S3_ENDPOINT";
+  private String endpoint;
 
-    /**
-     *
-     * @param endpoint may be null
-     */
-    public EndpointProperty(String endpoint){
+  /**
+   * @param endpoint may be null
+   */
+  public EndpointProperty(String endpoint) {
 
-        this.endpoint = endpoint;
+    this.endpoint = endpoint;
+  }
+
+  public static final EndpointProperty empty() {
+    return new EndpointProperty(null);
+  }
+
+  public boolean isPresent() {
+    return endpoint != null || System.getProperty(S3_ENDPOINT) != null;
+  }
+
+  /**
+   * @return the endpoint set in the constructor or set using the S3_ENDPOINT system property or
+   *     null
+   */
+  public String get() {
+    if (endpoint != null) {
+      return endpoint;
     }
-
-    public static final EndpointProperty empty() {
-        return new EndpointProperty(null);
+    String endpointEnv = System.getProperty(S3_ENDPOINT);
+    if (endpointEnv != null) {
+      return endpointEnv;
     }
-
-    public boolean isPresent() {
-        return endpoint != null || System.getProperty(S3_ENDPOINT)!=null;
-    }
-
-    /**
-     * @return the endpoint set in the constructor or set using the S3_ENDPOINT system property or null
-     * */
-    public String get() {
-        if (endpoint != null){
-            return endpoint;
-        }
-        String endpointEnv = System.getProperty(S3_ENDPOINT);
-        if(endpointEnv != null) {
-            return endpointEnv;
-        }
-        return null;
-    }
-
+    return null;
+  }
 }

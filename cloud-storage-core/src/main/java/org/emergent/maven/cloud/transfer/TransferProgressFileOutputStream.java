@@ -23,34 +23,35 @@ import java.io.IOException;
 
 public final class TransferProgressFileOutputStream extends FileOutputStream {
 
-    private final TransferProgress transferProgress;
+  private final TransferProgress transferProgress;
 
-    public TransferProgressFileOutputStream(File file, TransferProgress transferProgress) throws FileNotFoundException {
-        super(file);
-        this.transferProgress = transferProgress;
-    }
+  public TransferProgressFileOutputStream(File file, TransferProgress transferProgress)
+      throws FileNotFoundException {
+    super(file);
+    this.transferProgress = transferProgress;
+  }
 
-    @Override
-    public void write(int b) throws IOException {
-        super.write(b);
-        this.transferProgress.progress(new byte[]{(byte) b}, 1);
-    }
+  @Override
+  public void write(int b) throws IOException {
+    super.write(b);
+    this.transferProgress.progress(new byte[] {(byte) b}, 1);
+  }
 
-    @Override
-    public void write(byte b[]) throws IOException {
-        super.write(b);
-        this.transferProgress.progress(b, b.length);
-    }
+  @Override
+  public void write(byte b[]) throws IOException {
+    super.write(b);
+    this.transferProgress.progress(b, b.length);
+  }
 
-    @Override
-    public void write(byte b[], int off, int len) throws IOException {
-        super.write(b, off, len);
-        if (off == 0) {
-            this.transferProgress.progress(b, len);
-        } else {
-            byte[] bytes = new byte[len];
-            System.arraycopy(b, off, bytes, 0, len);
-            this.transferProgress.progress(bytes, len);
-        }
+  @Override
+  public void write(byte b[], int off, int len) throws IOException {
+    super.write(b, off, len);
+    if (off == 0) {
+      this.transferProgress.progress(b, len);
+    } else {
+      byte[] bytes = new byte[len];
+      System.arraycopy(b, off, bytes, 0, len);
+      this.transferProgress.progress(bytes, len);
     }
+  }
 }

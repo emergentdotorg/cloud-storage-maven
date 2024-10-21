@@ -20,9 +20,8 @@ import org.apache.maven.wagon.repository.Repository;
 
 public class BucketResolver {
 
-    public String resolve(Repository repository){
+  public String resolve(Repository repository) {
 
-        return repository.getHost();
-    }
-
+    return repository.getHost();
+  }
 }

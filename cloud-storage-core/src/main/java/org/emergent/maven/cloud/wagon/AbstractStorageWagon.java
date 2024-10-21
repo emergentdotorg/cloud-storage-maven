@@ -16,6 +16,7 @@
 
 package org.emergent.maven.cloud.wagon;
 
+import java.util.logging.Logger;
 import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.authentication.AuthenticationException;
@@ -32,132 +33,141 @@ import org.emergent.maven.cloud.listener.TransferListenerContainerImpl;
 import org.emergent.maven.cloud.resolver.BaseDirectoryResolver;
 import org.emergent.maven.cloud.resolver.BucketResolver;
 
-import java.util.logging.Logger;
-
 public abstract class AbstractStorageWagon implements Wagon {
 
-    private static final boolean SUPPORTS_DIRECTORY_COPY = true;
+  private static final boolean SUPPORTS_DIRECTORY_COPY = true;
 
-    private int connectionTimeOut = 0;
-    private int readConnectionTimeOut = 0;
+  private int connectionTimeOut = 0;
+  private int readConnectionTimeOut = 0;
 
-    protected Repository repository = null;
+  protected Repository repository = null;
 
-    protected final BucketResolver accountResolver;
-    protected final BaseDirectoryResolver containerResolver;
+  protected final BucketResolver accountResolver;
+  protected final BaseDirectoryResolver containerResolver;
 
-    protected final SessionListenerContainer sessionListenerContainer;
-    protected final TransferListenerContainer transferListenerContainer;
+  protected final SessionListenerContainer sessionListenerContainer;
+  protected final TransferListenerContainer transferListenerContainer;
 
-    private boolean interactive;
+  private boolean interactive;
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractStorageWagon.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(AbstractStorageWagon.class.getName());
 
-    public AbstractStorageWagon() {
-        this.accountResolver = new BucketResolver();
-        this.containerResolver = new BaseDirectoryResolver();
-        this.sessionListenerContainer = new SessionListenerContainerImpl(this);
-        this.transferListenerContainer = new TransferListenerContainerImpl(this);
-    }
+  public AbstractStorageWagon() {
+    this.accountResolver = new BucketResolver();
+    this.containerResolver = new BaseDirectoryResolver();
+    this.sessionListenerContainer = new SessionListenerContainerImpl(this);
+    this.transferListenerContainer = new TransferListenerContainerImpl(this);
+  }
 
-    @Override
-    public boolean supportsDirectoryCopy() {
-        return SUPPORTS_DIRECTORY_COPY;
-    }
+  @Override
+  public boolean supportsDirectoryCopy() {
+    return SUPPORTS_DIRECTORY_COPY;
+  }
 
-    @Override
-    public Repository getRepository() {
-        return repository;
-    }
+  @Override
+  public Repository getRepository() {
+    return repository;
+  }
 
-    @Override
-    public void openConnection() throws ConnectionException, AuthenticationException {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public void openConnection() throws ConnectionException, AuthenticationException {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public void connect(Repository repository) throws ConnectionException, AuthenticationException {
-        connect(repository,null,(ProxyInfoProvider) null);
-    }
+  @Override
+  public void connect(Repository repository) throws ConnectionException, AuthenticationException {
+    connect(repository, null, (ProxyInfoProvider) null);
+  }
 
-    @Override
-    public void connect(Repository repository, ProxyInfo proxyInfo) throws ConnectionException, AuthenticationException {
-        connect(repository,null,proxyInfo);
-    }
+  @Override
+  public void connect(Repository repository, ProxyInfo proxyInfo)
+      throws ConnectionException, AuthenticationException {
+    connect(repository, null, proxyInfo);
+  }
 
-    @Override
-    public void connect(Repository repository, ProxyInfoProvider proxyInfoProvider) throws ConnectionException, AuthenticationException {
-        connect(repository, null, proxyInfoProvider);
-    }
+  @Override
+  public void connect(Repository repository, ProxyInfoProvider proxyInfoProvider)
+      throws ConnectionException, AuthenticationException {
+    connect(repository, null, proxyInfoProvider);
+  }
 
-    @Override
-    public void connect(Repository repository, AuthenticationInfo authenticationInfo) throws ConnectionException, AuthenticationException {
-        connect(repository, authenticationInfo, (ProxyInfoProvider) null);
-    }
+  @Override
+  public void connect(Repository repository, AuthenticationInfo authenticationInfo)
+      throws ConnectionException, AuthenticationException {
+    connect(repository, authenticationInfo, (ProxyInfoProvider) null);
+  }
 
-    @Override
-    public void connect(Repository repository, AuthenticationInfo authenticationInfo, ProxyInfo proxyInfo) throws ConnectionException, AuthenticationException {
-        connect(repository, authenticationInfo, p->{if((p == null) || (proxyInfo == null) || p.equalsIgnoreCase(proxyInfo.getType())) return proxyInfo;  else return null;});
-    }
+  @Override
+  public void connect(
+      Repository repository, AuthenticationInfo authenticationInfo, ProxyInfo proxyInfo)
+      throws ConnectionException, AuthenticationException {
+    connect(
+        repository,
+        authenticationInfo,
+        p -> {
+          if ((p == null) || (proxyInfo == null) || p.equalsIgnoreCase(proxyInfo.getType()))
+            return proxyInfo;
+          else return null;
+        });
+  }
 
-    @Override
-    public void setTimeout(int i) {
-        this.connectionTimeOut = i;
-    }
+  @Override
+  public void setTimeout(int i) {
+    this.connectionTimeOut = i;
+  }
 
-    @Override
-    public int getTimeout() {
-        return connectionTimeOut;
-    }
+  @Override
+  public int getTimeout() {
+    return connectionTimeOut;
+  }
 
-    @Override
-    public void setReadTimeout(int i) {
-        readConnectionTimeOut = i;
-    }
+  @Override
+  public void setReadTimeout(int i) {
+    readConnectionTimeOut = i;
+  }
 
-    @Override
-    public int getReadTimeout() {
-        return readConnectionTimeOut;
-    }
+  @Override
+  public int getReadTimeout() {
+    return readConnectionTimeOut;
+  }
 
-    @Override
-    public void addSessionListener(SessionListener sessionListener) {
-        sessionListenerContainer.addSessionListener(sessionListener);
-    }
+  @Override
+  public void addSessionListener(SessionListener sessionListener) {
+    sessionListenerContainer.addSessionListener(sessionListener);
+  }
 
-    @Override
-    public void removeSessionListener(SessionListener sessionListener) {
-        sessionListenerContainer.removeSessionListener(sessionListener);
-    }
+  @Override
+  public void removeSessionListener(SessionListener sessionListener) {
+    sessionListenerContainer.removeSessionListener(sessionListener);
+  }
 
-    @Override
-    public boolean hasSessionListener(SessionListener sessionListener) {
-        return sessionListenerContainer.hasSessionListener(sessionListener);
-    }
+  @Override
+  public boolean hasSessionListener(SessionListener sessionListener) {
+    return sessionListenerContainer.hasSessionListener(sessionListener);
+  }
 
-    @Override
-    public void addTransferListener(TransferListener transferListener) {
-        transferListenerContainer.addTransferListener(transferListener);
-    }
+  @Override
+  public void addTransferListener(TransferListener transferListener) {
+    transferListenerContainer.addTransferListener(transferListener);
+  }
 
-    @Override
-    public void removeTransferListener(TransferListener transferListener) {
-        transferListenerContainer.removeTransferListener(transferListener);
-    }
+  @Override
+  public void removeTransferListener(TransferListener transferListener) {
+    transferListenerContainer.removeTransferListener(transferListener);
+  }
 
-    @Override
-    public boolean hasTransferListener(TransferListener transferListener) {
-        return transferListenerContainer.hasTransferListener(transferListener);
-    }
+  @Override
+  public boolean hasTransferListener(TransferListener transferListener) {
+    return transferListenerContainer.hasTransferListener(transferListener);
+  }
 
-    @Override
-    public boolean isInteractive() {
-        return interactive;
-    }
+  @Override
+  public boolean isInteractive() {
+    return interactive;
+  }
 
-    @Override
-    public void setInteractive(boolean b) {
-        interactive = b;
-    }
-
+  @Override
+  public void setInteractive(boolean b) {
+    interactive = b;
+  }
 }

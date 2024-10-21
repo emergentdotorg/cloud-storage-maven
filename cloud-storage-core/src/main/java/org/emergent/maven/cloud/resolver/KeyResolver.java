@@ -18,27 +18,26 @@ package org.emergent.maven.cloud.resolver;
 
 public class KeyResolver {
 
-    public String resolve(String... paths) {
+  public String resolve(String... paths) {
 
-        StringBuilder builder = new StringBuilder();
+    StringBuilder builder = new StringBuilder();
 
-        for(String s : paths) {
+    for (String s : paths) {
 
-            if(s.startsWith("/")) s = s.replaceFirst("/","");
-            builder.append(s);
-            if(!s.isEmpty() && !s.endsWith("/")) builder.append("/");
-        }
-
-        return replaceLast(builder);
+      if (s.startsWith("/")) s = s.replaceFirst("/", "");
+      builder.append(s);
+      if (!s.isEmpty() && !s.endsWith("/")) builder.append("/");
     }
 
-    private String replaceLast(StringBuilder stringBuilder) {
-        if(stringBuilder.length() == 0) {
-            return "";
-        }
+    return replaceLast(builder);
+  }
 
-        stringBuilder.replace(stringBuilder.lastIndexOf("/"), stringBuilder.lastIndexOf("/") + 1, "" );
-        return stringBuilder.toString();
+  private String replaceLast(StringBuilder stringBuilder) {
+    if (stringBuilder.length() == 0) {
+      return "";
     }
 
+    stringBuilder.replace(stringBuilder.lastIndexOf("/"), stringBuilder.lastIndexOf("/") + 1, "");
+    return stringBuilder.toString();
+  }
 }

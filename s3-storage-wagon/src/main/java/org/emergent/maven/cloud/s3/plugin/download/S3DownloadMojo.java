@@ -20,6 +20,14 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -33,128 +41,126 @@ import org.emergent.maven.cloud.s3.PathStyleEnabledProperty;
 import org.emergent.maven.cloud.s3.plugin.PrefixKeysIterator;
 import org.emergent.maven.cloud.s3.utils.S3Connect;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 @Mojo(name = "s3-download")
 public class S3DownloadMojo extends AbstractMojo {
 
-    @Parameter( property = "s3-download.bucket")
-    private String bucket;
+  @Parameter(property = "s3-download.bucket")
+  private String bucket;
 
-    @Parameter(property = "s3-download.keys")
-    private List<String> keys;
+  @Parameter(property = "s3-download.keys")
+  private List<String> keys;
 
-    @Parameter(property = "s3-download.downloadPath")
-    private String downloadPath;
+  @Parameter(property = "s3-download.downloadPath")
+  private String downloadPath;
 
-    @Parameter(property = "s3-download.region")
-    private String region;
+  @Parameter(property = "s3-download.region")
+  private String region;
 
-    private static final String DIRECTORY_CONTENT_TYPE = "application/x-directory";
+  private static final String DIRECTORY_CONTENT_TYPE = "application/x-directory";
 
-    private static final Logger LOGGER = Logger.getLogger(S3DownloadMojo.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(S3DownloadMojo.class.getName());
 
-    public S3DownloadMojo() {
+  public S3DownloadMojo() {}
+
+  public S3DownloadMojo(String bucket, List<String> keys, String downloadPath, String region) {
+    this.bucket = bucket;
+    this.keys = keys;
+    this.downloadPath = downloadPath;
+    this.region = region;
+  }
+
+  @Override
+  public void execute() throws MojoExecutionException, MojoFailureException {
+    AmazonS3 amazonS3;
+
+    try {
+      // Sending the authenticationInfo as null will make this use the default S3 authentication,
+      // which will only
+      // look at the environment Java properties or environment variables
+      amazonS3 =
+          S3Connect.connect(
+              null,
+              region,
+              EndpointProperty.empty(),
+              new PathStyleEnabledProperty(
+                  String.valueOf(S3ClientOptions.DEFAULT_PATH_STYLE_ACCESS)));
+    } catch (AuthenticationException e) {
+      throw new MojoExecutionException(
+          String.format(
+              "Unable to authenticate to S3 with the available credentials. Make sure to either"
+                  + " define the environment variables or System properties defined in"
+                  + " https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html.%nDetail:"
+                  + " %s",
+              e.getMessage()),
+          e);
     }
 
-    public S3DownloadMojo(String bucket, List<String> keys, String downloadPath, String region) {
-        this.bucket = bucket;
-        this.keys = keys;
-        this.downloadPath = downloadPath;
-        this.region = region;
+    if (keys.size() == 1) {
+      downloadSingleFile(amazonS3, keys.get(0));
+      return;
     }
 
-    @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        AmazonS3 amazonS3;
+    List<Iterator<String>> prefixKeysIterators =
+        keys.stream()
+            .map(pi -> new PrefixKeysIterator(amazonS3, bucket, pi))
+            .collect(Collectors.toList());
+    Iterator<String> keyIteratorConcated = new KeyIteratorConcated(prefixKeysIterators);
 
-        try {
-            //Sending the authenticationInfo as null will make this use the default S3 authentication, which will only
-            //look at the environment Java properties or environment variables
-            amazonS3 = S3Connect.connect(null, region, EndpointProperty.empty(), new PathStyleEnabledProperty(String.valueOf(S3ClientOptions.DEFAULT_PATH_STYLE_ACCESS)));
-        } catch (AuthenticationException e) {
-            throw new MojoExecutionException(
-                    String.format("Unable to authenticate to S3 with the available credentials. Make sure to either define the environment variables or System properties defined in https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html.%n" +
-                            "Detail: %s", e.getMessage()),
-                    e);
-        }
+    while (keyIteratorConcated.hasNext()) {
 
-        if (keys.size()==1) {
-            downloadSingleFile(amazonS3,keys.get(0));
-            return;
-        }
+      String key = keyIteratorConcated.next();
+      downloadFile(amazonS3, key);
+    }
+  }
 
-        List<Iterator<String>> prefixKeysIterators = keys.stream()
-                                                 .map(pi -> new PrefixKeysIterator(amazonS3, bucket, pi))
-                                                 .collect(Collectors.toList());
-        Iterator<String> keyIteratorConcated = new KeyIteratorConcated(prefixKeysIterators);
+  private void downloadSingleFile(AmazonS3 amazonS3, String key) {
+    File file = new File(downloadPath);
 
-        while (keyIteratorConcated.hasNext()) {
-
-            String key = keyIteratorConcated.next();
-            downloadFile(amazonS3,key);
-        }
+    if (file.getParentFile() != null) {
+      file.getParentFile().mkdirs();
     }
 
-    private void downloadSingleFile(AmazonS3 amazonS3,String key) {
-        File file = new File(downloadPath);
+    S3Object s3Object = amazonS3.getObject(bucket, key);
 
-        if(file.getParentFile()!=null) {
-            file.getParentFile().mkdirs();
-        }
+    try (S3ObjectInputStream s3ObjectInputStream = s3Object.getObjectContent();
+        FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+      IOUtils.copy(s3ObjectInputStream, fileOutputStream);
+    } catch (IOException e) {
+      LOGGER.log(Level.SEVERE, "Could not download s3 file");
+      e.printStackTrace();
+    }
+  }
 
-        S3Object s3Object = amazonS3.getObject(bucket, key);
+  private void downloadFile(AmazonS3 amazonS3, String key) {
 
-        try(S3ObjectInputStream s3ObjectInputStream = s3Object.getObjectContent();
-            FileOutputStream fileOutputStream = new FileOutputStream(file)
-        ) {
-            IOUtils.copy(s3ObjectInputStream,fileOutputStream);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Could not download s3 file");
-            e.printStackTrace();
-        }
+    File file = new File(createFullFilePath(key));
+
+    if (file.getParent() != null) {
+      file.getParentFile().mkdirs();
     }
 
-    private void downloadFile(AmazonS3 amazonS3,String key) {
+    S3Object s3Object = amazonS3.getObject(bucket, key);
 
-        File file = new File(createFullFilePath(key));
-
-        if(file.getParent()!=null) {
-            file.getParentFile().mkdirs();
-        }
-
-        S3Object s3Object = amazonS3.getObject(bucket, key);
-
-        if(isDirectory(s3Object)) {
-            return;
-        }
-
-        try(S3ObjectInputStream s3ObjectInputStream = s3Object.getObjectContent();
-            FileOutputStream fileOutputStream = new FileOutputStream(file)
-        ) {
-            IOUtils.copy(s3ObjectInputStream,fileOutputStream);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Could not download s3 file");
-            e.printStackTrace();
-        }
+    if (isDirectory(s3Object)) {
+      return;
     }
 
-    private final String createFullFilePath(String key) {
-
-        String fullPath = downloadPath+"/"+key;
-        return fullPath;
+    try (S3ObjectInputStream s3ObjectInputStream = s3Object.getObjectContent();
+        FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+      IOUtils.copy(s3ObjectInputStream, fileOutputStream);
+    } catch (IOException e) {
+      LOGGER.log(Level.SEVERE, "Could not download s3 file");
+      e.printStackTrace();
     }
+  }
 
-    private final boolean isDirectory(S3Object s3Object) {
-        return s3Object.getObjectMetadata().getContentType().equals(DIRECTORY_CONTENT_TYPE);
-    }
+  private final String createFullFilePath(String key) {
 
+    String fullPath = downloadPath + "/" + key;
+    return fullPath;
+  }
 
+  private final boolean isDirectory(S3Object s3Object) {
+    return s3Object.getObjectMetadata().getContentType().equals(DIRECTORY_CONTENT_TYPE);
+  }
 }

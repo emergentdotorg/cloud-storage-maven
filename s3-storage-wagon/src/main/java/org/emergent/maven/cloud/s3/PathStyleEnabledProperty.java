@@ -16,33 +16,31 @@
 
 package org.emergent.maven.cloud.s3;
 
-
 public class PathStyleEnabledProperty {
 
-    private static final String PATH_STYLE_PROP = "S3_PATH_STYLE_ENABLED";
-    private String pathStyleEnabled;
+  private static final String PATH_STYLE_PROP = "S3_PATH_STYLE_ENABLED";
+  private String pathStyleEnabled;
 
-    /**
-     *
-     * @param pathStyleEnabled may be null
-     */
-    public PathStyleEnabledProperty(String pathStyleEnabled){
+  /**
+   * @param pathStyleEnabled may be null
+   */
+  public PathStyleEnabledProperty(String pathStyleEnabled) {
 
-        this.pathStyleEnabled = pathStyleEnabled;
+    this.pathStyleEnabled = pathStyleEnabled;
+  }
+
+  /**
+   * @return the pathStyle set in the constructor or set using the S3_PATH_STYLE_ENABLED system
+   *     property or false
+   */
+  public boolean get() {
+    if (pathStyleEnabled != null) {
+      return Boolean.valueOf(pathStyleEnabled);
     }
-
-    /**
-     * @return the pathStyle set in the constructor or set using the S3_PATH_STYLE_ENABLED system property or false
-     * */
-    public boolean get() {
-        if (pathStyleEnabled != null){
-            return Boolean.valueOf(pathStyleEnabled);
-        }
-        String pathStyleEnv = System.getProperty(PATH_STYLE_PROP);
-        if(pathStyleEnv != null) {
-            return Boolean.valueOf(pathStyleEnv);
-        }
-        return false;
+    String pathStyleEnv = System.getProperty(PATH_STYLE_PROP);
+    if (pathStyleEnv != null) {
+      return Boolean.valueOf(pathStyleEnv);
     }
-
+    return false;
+  }
 }

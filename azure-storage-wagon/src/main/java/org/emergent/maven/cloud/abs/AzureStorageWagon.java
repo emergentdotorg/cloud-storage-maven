@@ -16,6 +16,11 @@
 
 package org.emergent.maven.cloud.abs;
 
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.ResourceDoesNotExistException;
 import org.apache.maven.wagon.TransferFailedException;
@@ -30,138 +35,149 @@ import org.emergent.maven.cloud.transfer.TransferProgress;
 import org.emergent.maven.cloud.transfer.TransferProgressImpl;
 import org.emergent.maven.cloud.wagon.AbstractStorageWagon;
 
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 public class AzureStorageWagon extends AbstractStorageWagon {
 
-    private AzureStorageRepository azureStorageRepository;
+  private AzureStorageRepository azureStorageRepository;
 
-    private static final Logger LOGGER = Logger.getLogger(AzureStorageWagon.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(AzureStorageWagon.class.getName());
 
-    @Override
-    public void get(String resourceName, File destination) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+  @Override
+  public void get(String resourceName, File destination)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
 
-        Resource resource = new Resource(resourceName);
-        transferListenerContainer.fireTransferInitiated(resource, TransferEvent.REQUEST_GET);
-        transferListenerContainer.fireTransferStarted(resource, TransferEvent.REQUEST_GET, destination);
+    Resource resource = new Resource(resourceName);
+    transferListenerContainer.fireTransferInitiated(resource, TransferEvent.REQUEST_GET);
+    transferListenerContainer.fireTransferStarted(resource, TransferEvent.REQUEST_GET, destination);
 
-        final TransferProgress transferProgress = new TransferProgressImpl(resource, TransferEvent.REQUEST_GET, transferListenerContainer);
+    final TransferProgress transferProgress =
+        new TransferProgressImpl(resource, TransferEvent.REQUEST_GET, transferListenerContainer);
 
-        try {
-            azureStorageRepository.copy(resourceName,destination,transferProgress);
-            transferListenerContainer.fireTransferCompleted(resource,TransferEvent.REQUEST_GET);
-        } catch (Exception e) {
-            transferListenerContainer.fireTransferError(resource,TransferEvent.REQUEST_GET,e);
-            throw e;
+    try {
+      azureStorageRepository.copy(resourceName, destination, transferProgress);
+      transferListenerContainer.fireTransferCompleted(resource, TransferEvent.REQUEST_GET);
+    } catch (Exception e) {
+      transferListenerContainer.fireTransferError(resource, TransferEvent.REQUEST_GET, e);
+      throw e;
+    }
+  }
+
+  @Override
+  public boolean getIfNewer(String resourceName, File file, long l)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+
+    Resource resource = new Resource(resourceName);
+
+    try {
+      if (azureStorageRepository.newResourceAvailable(resourceName, l)) {
+        get(resourceName, file);
+        return true;
+      }
+
+      return false;
+    } catch (TransferFailedException | ResourceDoesNotExistException | AuthorizationException e) {
+      this.transferListenerContainer.fireTransferError(resource, TransferEvent.REQUEST_GET, e);
+      throw e;
+    }
+  }
+
+  @Override
+  public void put(File file, String resourceName)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+    resourceName = Paths.get(resourceName).normalize().toString();
+    Resource resource = new Resource(resourceName);
+
+    LOGGER.log(
+        Level.FINER,
+        String.format("Uploading file %s to %s", file.getAbsolutePath(), resourceName));
+
+    transferListenerContainer.fireTransferInitiated(resource, TransferEvent.REQUEST_PUT);
+    transferListenerContainer.fireTransferStarted(resource, TransferEvent.REQUEST_PUT, file);
+    final TransferProgress transferProgress =
+        new TransferProgressImpl(resource, TransferEvent.REQUEST_PUT, transferListenerContainer);
+
+    try {
+      azureStorageRepository.put(file, resourceName, transferProgress);
+      transferListenerContainer.fireTransferCompleted(resource, TransferEvent.REQUEST_PUT);
+    } catch (TransferFailedException e) {
+      transferListenerContainer.fireTransferError(resource, TransferEvent.REQUEST_PUT, e);
+      throw e;
+    }
+  }
+
+  @Override
+  public void putDirectory(File source, String destination)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+    File[] files = source.listFiles();
+    if (files != null) {
+      for (File f : files) {
+        if (f.isDirectory()) {
+          putDirectory(f, destination + "/" + f.getName());
+        } else {
+          put(f, destination + "/" + f.getName());
         }
+      }
     }
+  }
 
-    @Override
-    public boolean getIfNewer(String resourceName, File file, long l) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
-
-        Resource resource = new Resource(resourceName);
-
-        try {
-            if(azureStorageRepository.newResourceAvailable(resourceName, l)) {
-                get(resourceName,file);
-                return true;
-            }
-
-            return false;
-        } catch (TransferFailedException| ResourceDoesNotExistException| AuthorizationException e) {
-            this.transferListenerContainer.fireTransferError(resource, TransferEvent.REQUEST_GET, e);
-            throw e;
-        }
+  @Override
+  public boolean resourceExists(String resourceName)
+      throws TransferFailedException, AuthorizationException {
+    try {
+      return azureStorageRepository.exists(resourceName);
+    } catch (TransferFailedException e) {
+      transferListenerContainer.fireTransferError(
+          new Resource(resourceName), TransferEvent.REQUEST_GET, e);
+      throw e;
     }
+  }
 
-    @Override
-    public void put(File file, String resourceName) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
-        resourceName = Paths.get(resourceName).normalize().toString();
-        Resource resource = new Resource(resourceName);
+  @Override
+  public List<String> getFileList(String resourceName)
+      throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
 
-        LOGGER.log(Level.FINER, String.format("Uploading file %s to %s", file.getAbsolutePath(), resourceName));
-
-        transferListenerContainer.fireTransferInitiated(resource,TransferEvent.REQUEST_PUT);
-        transferListenerContainer.fireTransferStarted(resource,TransferEvent.REQUEST_PUT, file);
-        final TransferProgress transferProgress = new TransferProgressImpl(resource, TransferEvent.REQUEST_PUT, transferListenerContainer);
-
-        try {
-            azureStorageRepository.put(file, resourceName,transferProgress);
-            transferListenerContainer.fireTransferCompleted(resource, TransferEvent.REQUEST_PUT);
-        } catch (TransferFailedException e) {
-            transferListenerContainer.fireTransferError(resource,TransferEvent.REQUEST_PUT,e);
-            throw e;
-        }
+    try {
+      return azureStorageRepository.list(resourceName);
+    } catch (Exception e) {
+      transferListenerContainer.fireTransferError(
+          new Resource(resourceName), TransferEvent.REQUEST_GET, e);
+      throw new TransferFailedException("Could not fetch resource");
     }
+  }
 
-    @Override
-    public void putDirectory(File source, String destination) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
-        File[] files = source.listFiles();
-        if (files != null) {
-            for (File f : files) {
-                if (f.isDirectory()) {
-                    putDirectory(f, destination + "/" + f.getName());
-                } else {
-                    put(f, destination + "/" + f.getName());
-                }
-            }
-        }
+  @Override
+  public void connect(
+      Repository repository,
+      AuthenticationInfo authenticationInfo,
+      ProxyInfoProvider proxyInfoProvider)
+      throws ConnectionException, AuthenticationException {
+
+    this.repository = repository;
+    this.sessionListenerContainer.fireSessionOpening();
+
+    try {
+
+      final String account = accountResolver.resolve(repository);
+      final String container = containerResolver.resolve(repository);
+
+      LOGGER.log(
+          Level.FINER,
+          String.format("Opening connection for account %s and container %s", account, container));
+
+      azureStorageRepository = new AzureStorageRepository(container);
+      azureStorageRepository.connect(authenticationInfo);
+      sessionListenerContainer.fireSessionLoggedIn();
+      sessionListenerContainer.fireSessionOpened();
+    } catch (Exception e) {
+      this.sessionListenerContainer.fireSessionConnectionRefused();
+      throw e;
     }
+  }
 
-    @Override
-    public boolean resourceExists(String resourceName) throws TransferFailedException, AuthorizationException {
-        try {
-            return azureStorageRepository.exists(resourceName);
-        } catch (TransferFailedException e) {
-            transferListenerContainer.fireTransferError(new Resource(resourceName), TransferEvent.REQUEST_GET, e);
-            throw e;
-        }
-    }
-
-    @Override
-    public List<String> getFileList(String resourceName) throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
-
-        try {
-            return azureStorageRepository.list(resourceName);
-        } catch (Exception e) {
-            transferListenerContainer.fireTransferError(new Resource(resourceName),TransferEvent.REQUEST_GET, e);
-            throw new TransferFailedException("Could not fetch resource");
-        }
-    }
-
-    @Override
-    public void connect(Repository repository, AuthenticationInfo authenticationInfo, ProxyInfoProvider proxyInfoProvider) throws ConnectionException, AuthenticationException {
-
-        this.repository = repository;
-        this.sessionListenerContainer.fireSessionOpening();
-
-        try {
-
-            final String account = accountResolver.resolve(repository);
-            final String container = containerResolver.resolve(repository);
-
-            LOGGER.log(Level.FINER,String.format("Opening connection for account %s and container %s",account,container));
-
-            azureStorageRepository = new AzureStorageRepository(container);
-            azureStorageRepository.connect(authenticationInfo);
-            sessionListenerContainer.fireSessionLoggedIn();
-            sessionListenerContainer.fireSessionOpened();
-        } catch (Exception e) {
-            this.sessionListenerContainer.fireSessionConnectionRefused();
-            throw e;
-        }
-    }
-
-    @Override
-    public void disconnect() throws ConnectionException {
-        sessionListenerContainer.fireSessionDisconnecting();
-        azureStorageRepository.disconnect();
-        sessionListenerContainer.fireSessionLoggedOff();
-        sessionListenerContainer.fireSessionDisconnected();
-    }
-
+  @Override
+  public void disconnect() throws ConnectionException {
+    sessionListenerContainer.fireSessionDisconnecting();
+    azureStorageRepository.disconnect();
+    sessionListenerContainer.fireSessionLoggedOff();
+    sessionListenerContainer.fireSessionDisconnected();
+  }
 }

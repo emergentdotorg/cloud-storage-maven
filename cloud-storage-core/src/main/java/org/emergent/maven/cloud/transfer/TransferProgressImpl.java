@@ -21,17 +21,19 @@ import org.emergent.maven.cloud.listener.TransferListenerContainer;
 
 public class TransferProgressImpl implements TransferProgress {
 
-    private final Resource resource;
-    private final int requestType;
-    private final TransferListenerContainer listenerContainer;
+  private final Resource resource;
+  private final int requestType;
+  private final TransferListenerContainer listenerContainer;
 
-    public TransferProgressImpl(Resource resource, int requestType, TransferListenerContainer listenerContainer) {
-        this.resource = resource;
-        this.requestType = requestType;
-        this.listenerContainer = listenerContainer;
-    }
+  public TransferProgressImpl(
+      Resource resource, int requestType, TransferListenerContainer listenerContainer) {
+    this.resource = resource;
+    this.requestType = requestType;
+    this.listenerContainer = listenerContainer;
+  }
 
-    @Override public void progress(byte[] buffer, int length) {
-        listenerContainer.fireTransferProgress(this.resource, this.requestType, buffer, length);
-    }
+  @Override
+  public void progress(byte[] buffer, int length) {
+    listenerContainer.fireTransferProgress(this.resource, this.requestType, buffer, length);
+  }
 }
