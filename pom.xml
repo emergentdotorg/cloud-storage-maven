@@ -47,7 +47,7 @@
     <connection>scm:git:git://github.com/emergentdotorg/cloud-storage-maven.git</connection>
     <developerConnection>scm:git:ssh://github.com:emergentdotorg/cloud-storage-maven.git</developerConnection>
     <tag>HEAD</tag>
-    <url>http://github.com/emergentdotorg/cloud-storage-maven/tree/master</url>
+    <url>http://github.com/emergentdotorg/cloud-storage-maven/tree/main</url>
   </scm>
 
   <issueManagement>
