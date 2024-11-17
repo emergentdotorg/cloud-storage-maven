@@ -1,0 +1,18 @@
+name: Maven Tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: emergentdotorg/github-actions/.github/workflows/reusable-maven-tests.yml@main
+    secrets: inherit
+    with:
+      java-version: '8'

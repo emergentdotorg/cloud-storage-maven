@@ -1,10 +1,12 @@
 name: Maven Release
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/**'
+  workflow_dispatch:
 
 jobs:
   invoke-release:
