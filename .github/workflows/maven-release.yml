@@ -1,12 +1,13 @@
 name: Maven Release
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/**'
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry-run without commits or deploys'
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   invoke-release:
@@ -14,6 +15,7 @@ jobs:
     secrets: inherit
     with:
       java-version: '8'
+      dry-run: ${{ inputs.dry-run }}
 
   process-results:
     runs-on: ubuntu-latest
