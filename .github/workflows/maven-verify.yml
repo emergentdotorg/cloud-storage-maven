@@ -1,4 +1,4 @@
-name: Maven Tests
+name: Maven Verify
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    uses: emergentdotorg/github-actions/.github/workflows/reusable-maven-tests.yml@main
+    uses: emergentdotorg/github-actions/.github/workflows/maven-verify.yaml@v3
     secrets: inherit
     with:
       java-version: '8'
