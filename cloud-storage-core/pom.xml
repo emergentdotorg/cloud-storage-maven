@@ -11,6 +11,8 @@
 
   <artifactId>cloud-storage-core</artifactId>
 
+  <name>Cloud Storage Core</name>
+
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>

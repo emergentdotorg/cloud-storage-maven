@@ -11,6 +11,8 @@
 
   <artifactId>azure-storage-wagon</artifactId>
   <packaging>maven-plugin</packaging>
+
+  <name>Azure Storage Wagon</name>
   <description>Azure blob storage wagon</description>
 
   <licenses>
