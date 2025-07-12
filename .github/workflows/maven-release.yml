@@ -7,7 +7,7 @@ on:
         description: 'Distribution server-id'
         type: choice
         required: false
-        default: emergent-nexus
+        default: central
         options:
           - central
           - emergent-nexus
@@ -28,7 +28,6 @@ jobs:
     secrets: inherit
     with:
       java-version: '8'
-      maven-profiles: emergent-release ${{ inputs.deploy-server == 'central' && 'central-dist' || '' }}
       deploy-server: ${{ inputs.deploy-server }}
       push-changes: ${{ inputs.push-changes }}
       dry-run: ${{ inputs.dry-run }}
