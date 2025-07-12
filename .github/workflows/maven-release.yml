@@ -28,6 +28,7 @@ jobs:
     secrets: inherit
     with:
       java-version: '8'
+      maven-profiles: 'emergent-release'
       deploy-server: ${{ inputs.deploy-server }}
       push-changes: ${{ inputs.push-changes }}
       dry-run: ${{ inputs.dry-run }}
