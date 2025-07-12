@@ -22,7 +22,7 @@
   </licenses>
 
   <properties>
-    <version.aws>1.11.743</version.aws>
+    <version.aws>1.12.261</version.aws>
   </properties>
 
   <dependencyManagement>
